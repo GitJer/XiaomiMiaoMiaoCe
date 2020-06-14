@@ -100,8 +100,6 @@ uint32_t getNtpTime()
 
 void do_NTP_update()
 { // Get the time via NTP
-  // TODO: no compensation for things like summer/winter-time,
-  // so there may be issues!
 
   // start wifi
   WiFi.begin(ssid, pass);
@@ -175,7 +173,6 @@ void setup()
     // init time variables
     rtc_data.unix_time = 0;
     rtc_data.secs_since_NTP = DO_NTP_UPDATE;
-    // rtc_data.delta_t = SECONDS_DEEP_SLEEP;
     rtc_data.valid_time = 0;
     // get the current time via NTP
     do_NTP_update();
@@ -216,6 +213,9 @@ void setup()
   uint32_t seconds_to_add = 60 - normal_time->tm_sec;
   if ((seconds_to_add < 30) and (seconds_to_add > 1))
   {
+    normal_time->tm_sec = 0;
+    normal_time->tm_min += 1;
+    rtc_data.unix_time = mktime(normal_time);
     // write variables that need to survive deep-sleep to rtc memory
     ESP.rtcUserMemoryWrite(0, (uint32_t *)&rtc_data, sizeof(rtc_data));
     // go to sleep
@@ -223,6 +223,9 @@ void setup()
   }
   else if ((seconds_to_add < 59) and (seconds_to_add > 1))
   {
+    normal_time->tm_sec = 0;
+    rtc_data.unix_time = mktime(normal_time);
+
     // write variables that need to survive deep-sleep to rtc memory
     ESP.rtcUserMemoryWrite(0, (uint32_t *)&rtc_data, sizeof(rtc_data));
     // go to sleep
