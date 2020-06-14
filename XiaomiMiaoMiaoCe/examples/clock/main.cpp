@@ -23,8 +23,8 @@ const int timeZone = 1;
 
 // ============================================================== WIFI SETTINGS
 // wifi settings
-const char ssid[] = "Ziggo2F292";   // your network SSID (name)
-const char pass[] = "EHItstKPq7fU"; // your network password
+const char ssid[] = "Your SSID";   // your network SSID (name)
+const char pass[] = "Your passwd"; // your network password
 // UDP settings
 WiFiUDP Udp;
 unsigned int localPort = 8888; // local port to listen for UDP packets
