@@ -1,8 +1,7 @@
 #include "XiaomiMiaoMiaoCe.h"
 
-/*
-    Version 0.0.2
-*/
+uint8_t T_DTM_init[18] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+uint8_t T_DTM2_init[18] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 //----------------------------------
 // LUTV, LUT_KK and LUT_KW values taken from the actual device with a
@@ -11,38 +10,50 @@
 uint8_t T_LUTV_init[15] = {0x47, 0x47, 0x01, 0x87, 0x87, 0x01, 0x47, 0x47, 0x01, 0x87, 0x87, 0x01, 0x81, 0x81, 0x01};
 uint8_t T_LUT_KK_init[15] = {0x87, 0x87, 0x01, 0x87, 0x87, 0x01, 0x47, 0x47, 0x01, 0x47, 0x47, 0x01, 0x81, 0x81, 0x01};
 uint8_t T_LUT_KW_init[15] = {0x47, 0x47, 0x01, 0x47, 0x47, 0x01, 0x87, 0x87, 0x01, 0x87, 0x87, 0x01, 0x81, 0x81, 0x01};
-
-uint8_t T_LUTV_update_1[15] = {0x47, 0x47, 0x01, 0x4C, 0xC2, 0x01, 0x42, 0x82, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-uint8_t T_LUT_KK_update_1[15] = {0x47, 0x47, 0x01, 0x4C, 0xC2, 0x01, 0x42, 0x82, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-uint8_t T_LUT_KW_update_1[15] = {0x87, 0x87, 0x01, 0x8C, 0xC2, 0x01, 0x82, 0x82, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-uint8_t T_LUTV_update_2[15] = {0x90, 0x90, 0x01, 0x90, 0x90, 0x01, 0x82, 0x82, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-uint8_t T_LUT_KK_update_2[15] = {0x50, 0x50, 0x01, 0x50, 0x50, 0x01, 0x82, 0x82, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-uint8_t T_LUT_KW_update_2[15] = {0x90, 0x90, 0x01, 0x90, 0x90, 0x01, 0x82, 0x82, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-uint8_t T_DTM_init[16] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+uint8_t T_LUT_KK_update[15] = {0x87, 0x87, 0x01, 0x87, 0x87, 0x01, 0x87, 0x87, 0x01, 0x87, 0x87, 0x01, 0x81, 0x81, 0x01};
+uint8_t T_LUT_KW_update[15] = {0x47, 0x47, 0x01, 0x47, 0x47, 0x01, 0x47, 0x47, 0x01, 0x47, 0x47, 0x01, 0x81, 0x81, 0x01};
 
 //----------------------------------
 // define segments
 // the data in the arrays consists of {byte, bit} pairs of each segment
 //----------------------------------
-uint8_t top_left_1[2] = {7, 1};
-uint8_t top_left[22] = {11, 3, 10, 0, 10, 5, 9, 3, 7, 5, 7, 3, 9, 7, 10, 3, 10, 2, 10, 1, 10, 4};
-uint8_t top_middle[22] = {11, 4, 11, 5, 9, 2, 9, 4, 8, 1, 8, 0, 9, 1, 9, 0, 11, 7, 11, 6, 10, 7};
-uint8_t top_right[22] = {9, 5, 8, 3, 8, 5, 6, 1, 6, 5, 6, 3, 7, 7, 8, 4, 8, 2, 9, 6, 8, 7};
-uint8_t bottom_left[22] = {4, 0, 4, 4, 3, 0, 0, 3, 0, 7, 0, 4, 4, 2, 6, 7, 5, 6, 5, 4, 4, 6};
-uint8_t bottom_right[22] = {2, 2, 2, 6, 0, 0, 0, 1, 0, 6, 0, 5, 0, 2, 2, 0, 3, 6, 3, 2, 2, 4};
-uint8_t background[2] = {12, 7};
-uint8_t battery_low[2] = {11, 0};
-uint8_t dashes[4] = {11, 2, 10, 6};
-uint8_t face[14] = {1, 1, 1, 2, 1, 3, 1, 4, 1, 5, 1, 6, 1, 7};
-uint8_t face_smile[4] = {1, 3, 1, 6};
-uint8_t face_frown[4] = {1, 2, 1, 4};
-uint8_t face_neutral[6] = {1, 2, 1, 3, 1, 5};
-uint8_t sun[2] = {1, 0};
-uint8_t fixed[2] = {11, 1};
+uint8_t top_left_1[2] = {12, 3};
+uint8_t top_left[22] = {16, 7, 15, 4, 14, 1, 14, 7, 12, 5, 12, 4, 13, 3, 15, 7, 15, 6, 15, 5, 14, 0};
+uint8_t top_middle[22] = {15, 0, 15, 1, 14, 6, 13, 0, 13, 5, 13, 4, 14, 5, 14, 4, 15, 3, 15, 2, 14, 3};
+uint8_t top_right[22] = {13, 1, 13, 7, 12, 1, 12, 7, 11, 5, 11, 2, 12, 6, 12, 0, 13, 6, 13, 2, 12, 2};
+uint8_t bottom_left[22] = {9, 1, 9, 7, 8, 5, 1, 1, 0, 3, 1, 4, 9, 4, 10, 0, 10, 6, 10, 3, 8, 2};
+uint8_t bottom_right[22] = {7, 7, 6, 5, 2, 0, 2, 3, 0, 2, 1, 7, 2, 6, 7, 4, 7, 1, 8, 6, 6, 2};
+uint8_t battery_low[2] = {16, 4};
+uint8_t dashes[4] = {16, 6, 14, 2};
+uint8_t face[14] = {3, 5, 5, 3, 5, 6, 4, 1, 4, 4, 4, 7, 3, 2};
+uint8_t face_smile[4] = {4, 1, 3, 2};
+uint8_t face_frown[4] = {5, 6, 4, 4};
+uint8_t face_neutral[6] = {5, 6, 4, 1, 4, 7};
+uint8_t sun[2] = {5, 0};
+uint8_t fixed[2] = {16, 5};
 
-// now define how the numbers map to the segments:
-int numbers[10][11] = {
+// These values closely match times captured with logic analyser
+uint8_t delay_SPI_clock_pulse = 8;
+uint8_t delay_SPI_end_cycle = 12;
+
+/*
+
+Now define how each digit maps to the segments:
+
+          1
+ 10 :-----------
+    |           |
+  9 |           | 2
+    |     11    |
+  8 :-----------: 3
+    |           |
+  7 |           | 4
+    |     5     |
+  6 :----------- 
+
+*/
+
+int digits[16][11] = {
     {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0},  // 0
     {2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0},   // 1
     {1, 2, 3, 5, 6, 7, 8, 10, 11, 0, 0}, // 2
@@ -52,152 +63,252 @@ int numbers[10][11] = {
     {1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0}, // 6
     {1, 2, 3, 4, 10, 0, 0, 0, 0, 0, 0},  // 7
     {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, // 8
-    {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 0}  // 9
+    {1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 0}, // 9
+    {1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 0}, // A
+    {3, 4, 5, 6, 7, 8, 9, 10, 11, 0, 0}, // b
+    {5, 6, 7, 8, 11, 0, 0, 0, 0, 0, 0},  // c
+    {2, 3, 4, 5, 6, 7, 8, 11, 0, 0, 0},  // d
+    {1, 5, 6, 7, 8, 9, 10, 11, 0, 0, 0}, // E
+    {1, 6, 7, 8, 9, 10, 11, 0, 0, 0, 0}  // F
 };
 
-void XiaomiMiaoMiaoCe::init(uint8_t redraw)
+void XiaomiMiaoMiaoCe::init()
 {
     // set the pin modes (note: no hardware SPI is used)
     pinMode(SPI_ENABLE, OUTPUT);
     pinMode(SPI_MOSI, OUTPUT);
-    pinMode(IO_RST_N, OUTPUT);
     pinMode(SPI_CLOCK, OUTPUT);
+    pinMode(IO_RST_N, OUTPUT);
+    pinMode(EPD_TO_PC4, OUTPUT);
     pinMode(IO_BUSY_N, INPUT);
 
-    // set all output to 0
-    digitalWrite(SPI_ENABLE, 0);
-    digitalWrite(SPI_MOSI, 0);
-    digitalWrite(IO_RST_N, 0);
-    digitalWrite(SPI_CLOCK, 0);
+    // set all outputs to 0
+    digitalWrite(SPI_ENABLE, LOW);
+    digitalWrite(SPI_MOSI, LOW);
+    digitalWrite(IO_RST_N, LOW);
+    digitalWrite(SPI_CLOCK, LOW);
+    digitalWrite(EPD_TO_PC4, LOW);
 
     // disable SPI (SPI enable is low active)
-    digitalWrite(SPI_ENABLE, 1);
+    digitalWrite(SPI_ENABLE, HIGH);
 
-    // after some delay set RST to 1
+    // Set pin 9 (connected to MCU pin 17 - PC4) to high (after a short pulse to low)
+    digitalWrite(EPD_TO_PC4, HIGH);
+    delay(10);
+    digitalWrite(EPD_TO_PC4, LOW);
+    delay(80);
+    digitalWrite(EPD_TO_PC4, HIGH);
+
+    // after some delay set RST_N to 1
     delayMicroseconds(100000);
-    digitalWrite(IO_RST_N, 1);
+    digitalWrite(IO_RST_N, HIGH);
 
-    if (redraw != 0)
-        // start an initialisation sequence
-        send_sequence(T_LUTV_init, T_LUT_KK_init,
-                      T_LUT_KW_init, T_DTM_init, 1);
+    // start an initialisation sequence (black - all 0xFF)
+    send_sequence(T_LUTV_init, T_LUT_KK_init, T_LUT_KW_init, T_DTM_init, 1);
+    // Original firmware pauses here for about 1500 ms
+    // in addition to display refresh busy signal
+    // Might be necessary in order to fully energise the black particles,
+    // but even without this delay the display seems to be working fine
+    delay(2000);
+
+    // start an initialisation sequence (white - all 0x00)
+    send_sequence(T_LUTV_init, T_LUT_KW_update, T_LUT_KK_update, T_DTM2_init, 1);
+    // Original firmware pauses here for about 100 ms
+    // in addition to display refresh busy signal.
+    // Might be dedicated to sensor data aquisition
+    // delay(100); 
 }
 
 void XiaomiMiaoMiaoCe::send_sequence(uint8_t *dataV, uint8_t *dataKK,
                                      uint8_t *dataKW, uint8_t *data,
                                      uint8_t is_init)
 {
-    // send PSR_PanelSetting_CMD and PWR_CMD, then start the charge pump
-    transmit(0, PSR_PanelSetting_CMD);
-    transmit(1, 0x0F);
-    transmit(0, PWR_CMD);
-    transmit(1, 0x0F);
-    transmit(1, 0x0F);
-    transmit(0, CPON_ChargePumpON_CMD);
+    // MSB bit in last byte (17,7) controls the background segment
+    // This segment can only be set (cannot be cleared by just writing its bit to 0),
+    // only when PARTIAL_DISPLAY_REFRESH command hasn't been sent
+    // In order to clear the background segment, set its bit to 0 and invoke init()
+    bool isBackgroundSegmentSet = inverted & ( (data[17] & 0x80) >> 7);
+
+    // send Charge Pump ON command
+    transmit(0, POWER_ON);
 
     // wait for the display to become ready to receive new
     // commands/data: when ready, the display sets IO_BUSY_N to 1
     while (digitalRead(IO_BUSY_N) == 0)
         delay(1);
 
-    // send two FRC commands as initialisation, afterwards only one
-    transmit(0, FRC_FrameRateControl_CMD);
-    transmit(1, 0x05);
+    // Original firmware pauses here for about 100ms - this time is not required by the display,
+    // but is probably dedicated to sensor data aquisition (temperature, humidity and battery).
+    //delay(100);
+
+    transmit(0, PANEL_SETTING);
+    transmit(1, 0x0B);
+    transmit(0, POWER_SETTING);
+    transmit(1, 0x46);
+    transmit(1, 0x46);
+    transmit(0, POWER_OFF_SEQUENCE_SETTING);
     if (is_init == 1)
     {
-        transmit(0, FRC_FrameRateControl_CMD);
+        transmit(1, 0x00);
+    }
+    else
+    {
+        transmit(1, 0x06);
+    }
+    
+    transmit(0, PLL_CONTROL); // Frame Rate Control
+    if (is_init == 1)
+    {
+        transmit(1, 0x02);
+    }
+    else
+    {
+        transmit(1, 0x03);
+    }
+
+    if ( (is_init == 0) && !(is_init == 0 && isBackgroundSegmentSet) )
+    {
+        transmit(0, PARTIAL_DISPLAY_REFRESH);
+        transmit(1, 0x00);
+        transmit(1, 0x87);
         transmit(1, 0x01);
     }
 
     // send the e-paper voltage settings (waves)
-    transmit(0, LUTV_VcomLUT_CMD);
+    transmit(0, LUT_FOR_VCOM);
     for (int i = 0; i < 15; i++)
         transmit(1, dataV[i]);
-    transmit(0, LUT_KK_BlackBlackLUT_CMD);
-    for (int i = 0; i < 15; i++)
-        transmit(1, dataKK[i]);
-    transmit(0, LUT_KW_BlackWhiteLUT_CMD);
-    for (int i = 0; i < 15; i++)
-        transmit(1, dataKW[i]);
 
+    if(is_init == 1)
+    {
+        transmit(0, LUT_CMD_0x23);
+        for (int i = 0; i < 15; i++)
+            transmit(1, dataKK[i]);
+
+        transmit(0, LUT_CMD_0x26);
+        for (int i = 0; i < 15; i++)
+            transmit(1, dataKW[i]);
+    }
+    else
+    {
+        transmit(0, LUT_CMD_0x23);
+        for (int i = 0; i < 15; i++)
+            transmit(1, dataV[i]);
+
+        transmit(0, LUT_CMD_0x24);
+        for (int i = 0; i < 15; i++)
+            transmit(1, dataKK[i]);
+
+        transmit(0, LUT_CMD_0x25);
+        for (int i = 0; i < 15; i++)
+            transmit(1, dataKW[i]);
+
+        transmit(0, LUT_CMD_0x26);
+        for (int i = 0; i < 15; i++)
+            transmit(1, dataV[i]);
+    }
+ 
     // send the actual data
-    transmit(0, DTM_DataStartTransmission_CMD);
-    for (int i = 0; i < 13; i++)
+    transmit(0, DATA_START_TRANSMISSION_1);
+    for (int i = 0; i < 18; i++)
         transmit(1, data[i]);
-    transmit(0, DSP_DataStop_CMD);
-    transmit(0, DRF_DisplayRefresh_CMD);
+
+    if (is_init == 1)
+    {
+        transmit(0, DATA_START_TRANSMISSION_2);
+        for(int i = 0; i < 18; i++)
+            transmit(1, data[i]);
+    }
+
+    transmit(0, DISPLAY_REFRESH);
 
     // wait for the display to become ready to receive new
     // commands/data: when ready, the display sets IO_BUSY_N to 1
     while (digitalRead(IO_BUSY_N) == 0)
         delay(1);
 
-    // send the CPOF_ChargePumpOFF_CMD command
-    transmit(0, CPOF_ChargePumpOFF_CMD);
+    // send Charge Pump OFF command
+    transmit(0, POWER_OFF);
     transmit(1, 0x03);
-    delay(5);
+
+    // wait for the display to become ready to receive new
+    // commands/data: when ready, the display sets IO_BUSY_N to 1
+    while (digitalRead(IO_BUSY_N) == 0)
+        delay(1);
 }
 
 void XiaomiMiaoMiaoCe::transmit(uint8_t cd, uint8_t data_to_send)
 {
+#if DEBUG_SERIAL
+    if (cd == 0)
+    {
+        Serial.printf("[%lu] Sending COMMAND: 0x%02x\r\n", millis(), data_to_send);
+    }
+    else
+    {
+        Serial.printf("[%lu] Sending DATA:    0x%02x\r\n", millis(), data_to_send);
+    }
+#endif
+
     // enable SPI
-    digitalWrite(SPI_ENABLE, 0);
-    delayMicroseconds(40);
+    digitalWrite(SPI_ENABLE, LOW);
+    delayMicroseconds(delay_SPI_clock_pulse);
 
     // send the first bit, this indicates if the following is a command or data
-    digitalWrite(SPI_CLOCK, 0);
+    digitalWrite(SPI_CLOCK, LOW);
     if (cd != 0)
-        digitalWrite(SPI_MOSI, 1);
+        digitalWrite(SPI_MOSI, HIGH);
     else
-        digitalWrite(SPI_MOSI, 0);
-    delayMicroseconds(40);
-    digitalWrite(SPI_CLOCK, 1);
-    delayMicroseconds(40);
+        digitalWrite(SPI_MOSI, LOW);
+    delayMicroseconds(delay_SPI_clock_pulse);
+    digitalWrite(SPI_CLOCK, HIGH);
+    delayMicroseconds(delay_SPI_clock_pulse);
 
     // send 8 bytes
     for (int i = 0; i < 8; i++)
     {
         // start the clock cycle
-        digitalWrite(SPI_CLOCK, 0);
+        digitalWrite(SPI_CLOCK, LOW);
         // set the MOSI according to the data
         if (data_to_send & 0x80)
-            digitalWrite(SPI_MOSI, 1);
+            digitalWrite(SPI_MOSI, HIGH);
         else
-            digitalWrite(SPI_MOSI, 0);
+            digitalWrite(SPI_MOSI, LOW);
         // prepare for the next bit
         data_to_send = (data_to_send << 1);
-        delayMicroseconds(40);
+        delayMicroseconds(delay_SPI_clock_pulse);
         // the data is read at rising clock (halfway the time MOSI is set)
-        digitalWrite(SPI_CLOCK, 1);
-        delayMicroseconds(40);
+        digitalWrite(SPI_CLOCK, HIGH);
+        delayMicroseconds(delay_SPI_clock_pulse);
     }
 
     // finish by ending the clock cycle and disabling SPI
-    digitalWrite(SPI_CLOCK, 0);
-    delayMicroseconds(60);
-    digitalWrite(SPI_ENABLE, 1);
-    delayMicroseconds(60);
+    digitalWrite(SPI_CLOCK, LOW);
+    delayMicroseconds(delay_SPI_end_cycle);
+    digitalWrite(SPI_ENABLE, HIGH);
+    delayMicroseconds(delay_SPI_end_cycle);
 }
 
 void XiaomiMiaoMiaoCe::write_display()
 {
-    // Indicate that new data is going to be send
-    digitalWrite(IO_RST_N, 1);
-    // remove the current displayed segments in preparation of
-    // the new segments to be displayed
-    send_sequence(T_LUTV_update_1, T_LUT_KK_update_1, T_LUT_KW_update_1,
-                  display_data, 0);
-    // display the new segments
-    send_sequence(T_LUTV_update_2, T_LUT_KK_update_2, T_LUT_KW_update_2,
-                  display_data, 0);
-    // Indicate end of new data
-    digitalWrite(IO_RST_N, 0);
+    // Send update waveforms
+    send_sequence(T_LUTV_init, T_LUT_KK_update, T_LUT_KW_update, display_data, 0);
 }
 
-void XiaomiMiaoMiaoCe::set_number(uint8_t number, uint8_t where)
+void XiaomiMiaoMiaoCe::write_display(uint8_t *data)
+{
+    for (int i = 0; i < 18; i++)
+    {
+        display_data[i] = data[i];    
+    }
+
+    write_display();
+}
+
+void XiaomiMiaoMiaoCe::set_digit(uint8_t digit, uint8_t where)
 {
     // check if the input is valid
-    if ((number >= 0) and (number < 10) and (where >= 2) and (where <= 6))
+    if ((digit >= 0) and (digit < 16) and (where >= 2) and (where <= 6))
     {
         // set which segments are to be used
         uint8_t *segments;
@@ -216,14 +327,14 @@ void XiaomiMiaoMiaoCe::set_number(uint8_t number, uint8_t where)
         else if (where == TOP_MIDDLE)
             segments = top_middle;
 
-        // set the segments, there are up to 11 segments in a number
+        // set the segments, there are up to 11 segments in a digit
         int segment_byte;
         int segment_bit;
         for (int i = 0; i < 11; i++)
         {
-            // get the segment needed to display the number 'number',
-            // this is stored in the array 'numbers'
-            int segment = numbers[number][i] - 1;
+            // get the segment needed to display the digit 'digit',
+            // this is stored in the array 'digits'
+            int segment = digits[digit][i] - 1;
             // segment = -1 indicates that there are no more segments to display
             if (segment >= 0)
             {
@@ -308,30 +419,42 @@ void XiaomiMiaoMiaoCe::set_segment(uint8_t segment_byte, uint8_t segment_bit,
     // the bit needs to be set or cleared
     if (((inverted == 0) and (value == 1)) or
         ((inverted == 1) and (value == 0)))
-        // remove the bit
-        display_data[segment_byte] &= ~(1 << segment_bit);
-    else
         // set the bit
         display_data[segment_byte] |= (1 << segment_bit);
+    else
+        // remove the bit
+        display_data[segment_byte] &= ~(1 << segment_bit);
 }
 
 void XiaomiMiaoMiaoCe::start_new_screen(uint8_t _inverted)
 {
+    if (inverted != _inverted)
+    {
+        // When changing screen from non-inverted to inverted or vice versa,
+        // we need to re-initialise the display in order to:
+        // 1. remove the black background segment (just clearing the segment bit
+        // doesn't have any effect)
+        // 2. set the correct (init) waveforms (otherwise some of the segments are not updated)
+        init();
+    }
+
     if (_inverted == 1)
         inverted = 1;
     else
         inverted = 0;
 
-    // prepare the data to be displayed, assume all segments are on or off
+    // prepare the data to be displayed, assume all segments are either on or off
     if (_inverted)
     {
-        for (int i = 0; i < 15; i++)
-            display_data[i] = 0x00;
+        for (int i = 0; i < 18; i++)
+            display_data[i] = 0xFF;
         // set the bit to switch the background to black,
         // use value=0 because of inversion
-        set_segment(12, 7, 0);
+        set_segment(17, 7, 0);
     }
     else
-        for (int i = 0; i < 15; i++)
-            display_data[i] = 0xFF;
+    {
+        for (int i = 0; i < 18; i++)
+           display_data[i] = 0x00;
+    }
 }

@@ -6,12 +6,11 @@ xiaomi mijia Mi miaomiaoce Thermometer Temperature Humidity Sensor
 Note: after a lot of playing with this display the white becomes light gray
       and the black becomes dark gray. This restores itself after some time
       without activity (i.e. switched off for some time). 
-
-TODO: make a library.json
 */
 
-#include <Arduino.h>
 #include "XiaomiMiaoMiaoCe.h"
+
+uint8_t all_segments[18] = {0x0c, 0x92, 0x49, 0x24, 0x92, 0x49, 0x24, 0x92, 0x64, 0x92, 0x49, 0x24, 0xff, 0xff, 0xff, 0xff, 0xf0, 0xff};
 
 XiaomiMiaoMiaoCe my_display;
 
@@ -19,24 +18,50 @@ void setup()
 {
     // allow serial printing
     Serial.begin(115200);
-    // initialize the e-ink display and do a redraw
-    my_display.init(1);
+
+    // Use built-in LED as kind of watchdog indicator...
+    pinMode(LED_BUILTIN, OUTPUT);
+    
+#if DEBUG_SERIAL
+    Serial.print("Initialising display, please wait...\r\n");
+#endif
+
+    // initialize the e-ink display
+    my_display.init();
+
+    // show all segments at once.
+    // Original firmware does this on start-up
+    my_display.write_display(all_segments);
+    //delay(100);
+
+#if DEBUG_SERIAL
+    Serial.print("Display initialised. Continuing to the loop() function!\r\n\r\n");
+#endif
 }
 
 // the number to be displayed
 int number = 0;
+int led_state = LOW;
+
+int bytes = 0;
+int bits = 0;
+bool is_screen_inverted = false;
 
 void loop()
 {
-    // start drawing a new screen, non-inverted
-    my_display.start_new_screen(0);
+    led_state = ~led_state;
+    digitalWrite(LED_BUILTIN, led_state);
 
-    // display the same number on all 5 positions
-    my_display.set_number(number % 10, TOP_LEFT);
-    my_display.set_number(number % 10, TOP_MIDDLE);
-    my_display.set_number(number % 10, TOP_RIGHT);
-    my_display.set_number(number % 10, BOTTOM_LEFT);
-    my_display.set_number(number % 10, BOTTOM_RIGHT);
+    // start drawing a new screen
+    my_display.start_new_screen(is_screen_inverted);
+
+    // display the same Hexadecimal digit on top 3 positions
+    my_display.set_digit(number % 16, TOP_LEFT);
+    my_display.set_digit(number % 16, TOP_MIDDLE);
+    my_display.set_digit(number % 16, TOP_RIGHT);
+    // display the same Decimal digit on bottom 2 positions
+    my_display.set_digit(number % 10, BOTTOM_LEFT);
+    my_display.set_digit(number % 10, BOTTOM_RIGHT);
 
     // display pre-defined shapes one at a time
     int remainder = number % 9;
@@ -71,10 +96,19 @@ void loop()
         break;
     }
 
-    // display the numbers and shapes
     my_display.write_display();
-    // increase the number to be displayed
     number++;
-    // wait some time seconds
-    delay(3000);
+
+    // Re-initialise display every 16 cycles
+    // and alternate between inverted / non-inverted display
+    if ((number % 16) == 0)
+    {
+        is_screen_inverted = !is_screen_inverted;
+        // no need to explicitly re-initialise the display,
+        // as this is automatically done when transitioning
+        // from inverted to non-inverted and vice versa.
+    }
+
+    // wait some time (5 seconds)
+    delay(5000);
 }
