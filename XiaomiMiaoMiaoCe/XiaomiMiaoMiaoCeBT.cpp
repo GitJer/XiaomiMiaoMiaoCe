@@ -1,4 +1,4 @@
-#include "XiaomiMiaoMiaoCe.h"
+#include "XiaomiMiaoMiaoCeBT.h"
 
 uint8_t T_DTM_init[18] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 uint8_t T_DTM2_init[18] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -26,8 +26,8 @@ uint8_t bottom_right[22] = {7, 7, 6, 5, 2, 0, 2, 3, 0, 2, 1, 7, 2, 6, 7, 4, 7, 1
 uint8_t battery_low[2] = {16, 4};
 uint8_t dashes[4] = {16, 6, 14, 2};
 uint8_t face[14] = {3, 5, 5, 3, 5, 6, 4, 1, 4, 4, 4, 7, 3, 2};
-uint8_t face_smile[4] = {4, 1, 3, 2};
-uint8_t face_frown[4] = {5, 6, 4, 4};
+uint8_t face_smile[8] = {4, 1, 5, 6, 3, 2, 4, 7};
+uint8_t face_frown[6] = {5, 6, 4, 4, 4, 1};
 uint8_t face_neutral[6] = {5, 6, 4, 1, 4, 7};
 uint8_t sun[2] = {5, 0};
 uint8_t fixed[2] = {16, 5};
@@ -72,7 +72,7 @@ int digits[16][11] = {
     {1, 6, 7, 8, 9, 10, 11, 0, 0, 0, 0}  // F
 };
 
-void XiaomiMiaoMiaoCe::init()
+void XiaomiMiaoMiaoCeBT::init(uint8_t redraw)
 {
     // set the pin modes (note: no hardware SPI is used)
     pinMode(SPI_ENABLE, OUTPUT);
@@ -103,32 +103,29 @@ void XiaomiMiaoMiaoCe::init()
     delayMicroseconds(100000);
     digitalWrite(IO_RST_N, HIGH);
 
-    // start an initialisation sequence (black - all 0xFF)
-    send_sequence(T_LUTV_init, T_LUT_KK_init, T_LUT_KW_init, T_DTM_init, 1);
-    // Original firmware pauses here for about 1500 ms
-    // in addition to display refresh busy signal
-    // Might be necessary in order to fully energise the black particles,
-    // but even without this delay the display seems to be working fine
-    delay(2000);
+    if(redraw != 0)
+    {
+        // start an initialisation sequence (black - all 0xFF)
+        send_sequence(T_LUTV_init, T_LUT_KK_init, T_LUT_KW_init, T_DTM_init, 1);
+        // Original firmware pauses here for about 1500 ms
+        // in addition to display refresh busy signal
+        // Might be necessary in order to fully energise the black particles,
+        // but even without this delay the display seems to be working fine
+        delay(2000);
 
-    // start an initialisation sequence (white - all 0x00)
-    send_sequence(T_LUTV_init, T_LUT_KW_update, T_LUT_KK_update, T_DTM2_init, 1);
-    // Original firmware pauses here for about 100 ms
-    // in addition to display refresh busy signal.
-    // Might be dedicated to sensor data aquisition
-    // delay(100); 
+        // start an initialisation sequence (white - all 0x00)
+        send_sequence(T_LUTV_init, T_LUT_KW_update, T_LUT_KK_update, T_DTM2_init, 1);
+        // Original firmware pauses here for about 100 ms
+        // in addition to display refresh busy signal.
+        // Might be dedicated to sensor data aquisition
+        // delay(100);
+    }
 }
 
-void XiaomiMiaoMiaoCe::send_sequence(uint8_t *dataV, uint8_t *dataKK,
+void XiaomiMiaoMiaoCeBT::send_sequence(uint8_t *dataV, uint8_t *dataKK,
                                      uint8_t *dataKW, uint8_t *data,
                                      uint8_t is_init)
 {
-    // MSB bit in last byte (17,7) controls the background segment
-    // This segment can only be set (cannot be cleared by just writing its bit to 0),
-    // only when PARTIAL_DISPLAY_REFRESH command hasn't been sent
-    // In order to clear the background segment, set its bit to 0 and invoke init()
-    bool isBackgroundSegmentSet = inverted & ( (data[17] & 0x80) >> 7);
-
     // send Charge Pump ON command
     transmit(0, POWER_ON);
 
@@ -166,13 +163,16 @@ void XiaomiMiaoMiaoCe::send_sequence(uint8_t *dataV, uint8_t *dataKK,
         transmit(1, 0x03);
     }
 
-    if ( (is_init == 0) && !(is_init == 0 && isBackgroundSegmentSet) )
-    {
-        transmit(0, PARTIAL_DISPLAY_REFRESH);
-        transmit(1, 0x00);
-        transmit(1, 0x87);
-        transmit(1, 0x01);
-    }
+// NOTE: Original firmware makes partial refresh (when not initialising the screen).
+// However "playing" with the partial refresh enabled, white segments start turning gray after a while
+// (until display is re-initialised).
+//    if ( (is_init == 0) )
+//    {
+//        transmit(0, PARTIAL_DISPLAY_REFRESH);
+//        transmit(1, 0x00);
+//        transmit(1, 0x87);
+//        transmit(1, 0x01);
+//    }
 
     // send the e-paper voltage settings (waves)
     transmit(0, LUT_FOR_VCOM);
@@ -219,6 +219,18 @@ void XiaomiMiaoMiaoCe::send_sequence(uint8_t *dataV, uint8_t *dataKK,
         for(int i = 0; i < 18; i++)
             transmit(1, data[i]);
     }
+    else
+    {
+        // NOTE: Original firmware doesn't perform this,
+        // but from experiments inverting the segments in
+        // DATA_START_TRANSMISSION_2 helps alleviate the problem
+        // with white segments turning gray. The only downside is
+        // a slight "blink" of the white background when refreshing
+        // the display
+        transmit(0, DATA_START_TRANSMISSION_2);
+        for(int i = 0; i < 18; i++)
+            transmit(1, ~data[i]);
+    }
 
     transmit(0, DISPLAY_REFRESH);
 
@@ -237,7 +249,7 @@ void XiaomiMiaoMiaoCe::send_sequence(uint8_t *dataV, uint8_t *dataKK,
         delay(1);
 }
 
-void XiaomiMiaoMiaoCe::transmit(uint8_t cd, uint8_t data_to_send)
+void XiaomiMiaoMiaoCeBT::transmit(uint8_t cd, uint8_t data_to_send)
 {
 #if DEBUG_SERIAL
     if (cd == 0)
@@ -289,13 +301,17 @@ void XiaomiMiaoMiaoCe::transmit(uint8_t cd, uint8_t data_to_send)
     delayMicroseconds(delay_SPI_end_cycle);
 }
 
-void XiaomiMiaoMiaoCe::write_display()
+void XiaomiMiaoMiaoCeBT::write_display()
 {
+    digitalWrite(IO_RST_N, LOW);
+    delayMicroseconds(100);
+    digitalWrite(IO_RST_N, HIGH);
+
     // Send update waveforms
     send_sequence(T_LUTV_init, T_LUT_KK_update, T_LUT_KW_update, display_data, 0);
 }
 
-void XiaomiMiaoMiaoCe::write_display(uint8_t *data)
+void XiaomiMiaoMiaoCeBT::write_display(uint8_t *data)
 {
     for (int i = 0; i < 18; i++)
     {
@@ -305,7 +321,7 @@ void XiaomiMiaoMiaoCe::write_display(uint8_t *data)
     write_display();
 }
 
-void XiaomiMiaoMiaoCe::set_digit(uint8_t digit, uint8_t where)
+void XiaomiMiaoMiaoCeBT::set_digit(uint8_t digit, uint8_t where)
 {
     // check if the input is valid
     if ((digit >= 0) and (digit < 16) and (where >= 2) and (where <= 6))
@@ -349,7 +365,7 @@ void XiaomiMiaoMiaoCe::set_digit(uint8_t digit, uint8_t where)
     }
 }
 
-void XiaomiMiaoMiaoCe::set_shape(uint8_t where)
+void XiaomiMiaoMiaoCeBT::set_shape(uint8_t where)
 {
     int num_of_segments = 0;
     uint8_t *segments = NULL;
@@ -357,47 +373,47 @@ void XiaomiMiaoMiaoCe::set_shape(uint8_t where)
     // set the number of segments and which segments has to be displayed
     if (where == TOP_LEFT_1)
     {
-        num_of_segments = 1;
+        num_of_segments = sizeof(top_left_1) / 2;
         segments = top_left_1;
     }
     else if (where == BATTERY_LOW)
     {
-        num_of_segments = 1;
+        num_of_segments = sizeof(battery_low) / 2;
         segments = battery_low;
     }
     else if (where == DASHES)
     {
-        num_of_segments = 2;
+        num_of_segments = sizeof(dashes) / 2;
         segments = dashes;
     }
     else if (where == FACE)
     {
-        num_of_segments = 7;
+        num_of_segments = sizeof(face) / 2;
         segments = face;
     }
     else if (where == FACE_SMILE)
     {
-        num_of_segments = 2;
+        num_of_segments = sizeof(face_smile) / 2;
         segments = face_smile;
     }
     else if (where == FACE_FROWN)
     {
-        num_of_segments = 2;
+        num_of_segments = sizeof(face_frown) / 2;
         segments = face_frown;
     }
     else if (where == FACE_NEUTRAL)
     {
-        num_of_segments = 3;
+        num_of_segments = sizeof(face_neutral) / 2;
         segments = face_neutral;
     }
     else if (where == SUN)
     {
-        num_of_segments = 1;
+        num_of_segments = sizeof(sun) / 2;
         segments = sun;
     }
     else if (where == FIXED)
     {
-        num_of_segments = 1;
+        num_of_segments = sizeof(fixed) / 2;
         segments = fixed;
     }
     else
@@ -412,7 +428,7 @@ void XiaomiMiaoMiaoCe::set_shape(uint8_t where)
     }
 }
 
-void XiaomiMiaoMiaoCe::set_segment(uint8_t segment_byte, uint8_t segment_bit,
+void XiaomiMiaoMiaoCeBT::set_segment(uint8_t segment_byte, uint8_t segment_bit,
                                    uint8_t value)
 {
     // depending on whether the display is inverted and the desired value
@@ -426,18 +442,8 @@ void XiaomiMiaoMiaoCe::set_segment(uint8_t segment_byte, uint8_t segment_bit,
         display_data[segment_byte] &= ~(1 << segment_bit);
 }
 
-void XiaomiMiaoMiaoCe::start_new_screen(uint8_t _inverted)
+void XiaomiMiaoMiaoCeBT::start_new_screen(uint8_t _inverted)
 {
-    if (inverted != _inverted)
-    {
-        // When changing screen from non-inverted to inverted or vice versa,
-        // we need to re-initialise the display in order to:
-        // 1. remove the black background segment (just clearing the segment bit
-        // doesn't have any effect)
-        // 2. set the correct (init) waveforms (otherwise some of the segments are not updated)
-        init();
-    }
-
     if (_inverted == 1)
         inverted = 1;
     else

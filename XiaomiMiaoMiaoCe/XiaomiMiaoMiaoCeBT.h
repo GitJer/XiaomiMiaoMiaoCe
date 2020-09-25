@@ -58,13 +58,19 @@
 //----------------------------------
 // define the class for driving the Xiaomi MiaoMiaoCe e-ink display
 //----------------------------------
-class XiaomiMiaoMiaoCe
+class XiaomiMiaoMiaoCeBT
 {
 public:
     /**
      * Initialize the display
+     * @param redraw    should the screen should have an black-white redraw?
+     *                  redraw = 0: no redraw
+     *                  redraw != 0: do a redraw 
+     *                  normally redrawing is advisable (redraw != 0), but e.g. 
+     *                  when using deep-sleep you may want to initialize the 
+     *                  screen without the black-white transition
      */
-    void init();
+    void init(uint8_t redraw);
 
     /** display the data
      */
