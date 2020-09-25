@@ -1,11 +1,8 @@
 /*
 
 This code is for controlling the e-ink screen of the 
-xiaomi mijia Mi miaomiaoce Thermometer Temperature Humidity Sensor 
+Xiaomi Mijia MiaoMiaoCe Bluetooth Thermometer and Hygrometer Sensor 
 
-Note: after a lot of playing with this display the white becomes light gray
-      and the black becomes dark gray. This restores itself after some time
-      without activity (i.e. switched off for some time). 
 */
 
 #include "XiaomiMiaoMiaoCe.h"

@@ -1,5 +1,5 @@
 /*
- * Clock for the ESP8266 with the XiaomiMiaoMiaoCe e-ink display
+ * Clock for the ESP8266 with the MHO-C401 e-ink display
  */
 
 #include <Arduino.h>
@@ -12,13 +12,13 @@ XiaomiMiaoMiaoCe my_display;
 
 // ============================================================= CLOCK SETTINGS
 // change the clock once every SECONDS_DEEP_SLEEP seconds
-#define SECONDS_DEEP_SLEEP 60
+#define SECONDS_DEEP_SLEEP 10
 // update via NTP once every DO_NTP_UPDATE seconds (typically an hour)
 #define DO_NTP_UPDATE 3600
 // NTP Server
-static const char ntpServerName[] = "nl.pool.ntp.org";
+static const char ntpServerName[] = "uk.pool.ntp.org";
 // Central European Time
-const int timeZone = 1;
+const int timeZone = 0;
 // function prototypes
 
 // ============================================================== WIFI SETTINGS
@@ -141,15 +141,22 @@ void update_display()
   tm *normal_time;
   normal_time = localtime(&rtc_data.unix_time);
 
-  // start building a new screen (non-inverted)
-  my_display.start_new_screen(0);
+  // start building a new screen (alternating between
+  // inverted / non-inverted every minute)
+  if (normal_time->tm_min % 2 == 0)
+    my_display.start_new_screen(1);
+  else
+    my_display.start_new_screen(0);
+  
 
+  // the 10th of the seconds on the top row
+  my_display.set_digit(normal_time->tm_sec / 10, TOP_RIGHT);
   // the minutes on the bottom row
-  my_display.set_number(normal_time->tm_min % 10, BOTTOM_RIGHT);
-  my_display.set_number(normal_time->tm_min / 10, BOTTOM_LEFT);
+  my_display.set_digit(normal_time->tm_min % 10, BOTTOM_RIGHT);
+  my_display.set_digit(normal_time->tm_min / 10, BOTTOM_LEFT);
   // the hours on the top row
-  my_display.set_number(normal_time->tm_hour % 10, TOP_MIDDLE);
-  my_display.set_number(normal_time->tm_hour / 10, TOP_LEFT);
+  my_display.set_digit(normal_time->tm_hour % 10, TOP_MIDDLE);
+  my_display.set_digit(normal_time->tm_hour / 10, TOP_LEFT);
   // the smiley/frowny indicates if the time is valid
   // i.e. the latest NTP update was successful
   if (rtc_data.valid_time == 0)
@@ -198,8 +205,8 @@ void setup()
     ESP.rtcUserMemoryWrite(0, (uint32_t *)&rtc_data, sizeof(rtc_data));
   }
 
-  // init time variables with location
-  setenv("TZ", "CET-1CEST-2,M3.5.0/02:00:00,M10.5.0/03:00:00", 3);
+  // Set timezone to British DST
+  setenv("TZ","GMTGMT-1,M3.4.0/01,M10.4.0/02",1);
   tzset();
 
   // display the current time (hours, minutes) on the display
@@ -210,7 +217,7 @@ void setup()
   tm *normal_time;
   normal_time = localtime(&rtc_data.unix_time);
 
-  uint32_t seconds_to_add = 60 - normal_time->tm_sec;
+  uint32_t seconds_to_add = SECONDS_DEEP_SLEEP - normal_time->tm_sec;
   if ((seconds_to_add < 30) and (seconds_to_add > 1))
   {
     normal_time->tm_sec = 0;
