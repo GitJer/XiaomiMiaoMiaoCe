@@ -5,11 +5,11 @@ Xiaomi Mijia MiaoMiaoCe Bluetooth Thermometer and Hygrometer Sensor
 
 */
 
-#include "XiaomiMiaoMiaoCe.h"
+#include "XiaomiMiaoMiaoCeBT.h"
 
 uint8_t all_segments[18] = {0x0c, 0x92, 0x49, 0x24, 0x92, 0x49, 0x24, 0x92, 0x64, 0x92, 0x49, 0x24, 0xff, 0xff, 0xff, 0xff, 0xf0, 0xff};
 
-XiaomiMiaoMiaoCe my_display;
+XiaomiMiaoMiaoCeBT my_display;
 
 void setup()
 {
@@ -24,7 +24,7 @@ void setup()
 #endif
 
     // initialize the e-ink display
-    my_display.init();
+    my_display.init(1);
 
     // show all segments at once.
     // Original firmware does this on start-up
@@ -101,9 +101,6 @@ void loop()
     if ((number % 16) == 0)
     {
         is_screen_inverted = !is_screen_inverted;
-        // no need to explicitly re-initialise the display,
-        // as this is automatically done when transitioning
-        // from inverted to non-inverted and vice versa.
     }
 
     // wait some time (5 seconds)

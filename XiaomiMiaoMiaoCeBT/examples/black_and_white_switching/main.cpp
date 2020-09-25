@@ -6,9 +6,9 @@ Xiaomi Mijia MiaoMiaoCe Bluetooth Thermometer and Hygrometer Sensor
 */
 
 #include <Arduino.h>
-#include "XiaomiMiaoMiaoCe.h"
+#include "XiaomiMiaoMiaoCeBT.h"
 
-XiaomiMiaoMiaoCe my_display;
+XiaomiMiaoMiaoCeBT my_display;
 
 void setup()
 {

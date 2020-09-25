@@ -5,10 +5,10 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
-#include "XiaomiMiaoMiaoCe.h"
+#include "XiaomiMiaoMiaoCeBT.h"
 #include <time.h>
 
-XiaomiMiaoMiaoCe my_display;
+XiaomiMiaoMiaoCeBT my_display;
 
 // ============================================================= CLOCK SETTINGS
 // change the clock once every SECONDS_DEEP_SLEEP seconds
