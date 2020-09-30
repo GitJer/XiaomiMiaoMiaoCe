@@ -83,27 +83,26 @@ void XiaomiMiaoMiaoCeBT::init(uint8_t redraw)
     pinMode(IO_BUSY_N, INPUT);
 
     // set all outputs to 0
-    digitalWrite(SPI_ENABLE, LOW);
+    digitalWrite(SPI_ENABLE, LOW); 
     digitalWrite(SPI_MOSI, LOW);
-    digitalWrite(IO_RST_N, LOW);
+    digitalWrite(IO_RST_N, LOW); 
     digitalWrite(SPI_CLOCK, LOW);
-    digitalWrite(EPD_TO_PC4, LOW);
+    digitalWrite(EPD_TO_PC4, LOW); 
 
     // disable SPI (SPI enable is low active)
     digitalWrite(SPI_ENABLE, HIGH);
 
-    // Set pin 9 (connected to MCU pin 17 - PC4) to high (after a short pulse to low)
+    // Set pin 8 (connected to MCU pin 17 - PC4) to high (after a short pulse to low)
     digitalWrite(EPD_TO_PC4, HIGH);
     delay(10);
     digitalWrite(EPD_TO_PC4, LOW);
     delay(80);
     digitalWrite(EPD_TO_PC4, HIGH);
-
     // after some delay set RST_N to 1
-    delayMicroseconds(100000);
+    delayMicroseconds(110);
     digitalWrite(IO_RST_N, HIGH);
 
-    if(redraw != 0)
+    if(redraw)
     {
         // start an initialisation sequence (black - all 0xFF)
         send_sequence(T_LUTV_init, T_LUT_KK_init, T_LUT_KW_init, T_DTM_init, 1);
@@ -120,12 +119,26 @@ void XiaomiMiaoMiaoCeBT::init(uint8_t redraw)
         // Might be dedicated to sensor data aquisition
         // delay(100);
     }
+    else
+    {
+        // Remove all black segments
+        send_sequence(T_LUTV_init, T_LUT_KW_update, T_LUT_KK_update, T_DTM2_init, 1);
+    }
+    
 }
 
 void XiaomiMiaoMiaoCeBT::send_sequence(uint8_t *dataV, uint8_t *dataKK,
                                      uint8_t *dataKW, uint8_t *data,
                                      uint8_t is_init)
 {
+    if(is_init || transition)
+    {
+        // pulse RST_N low for 110 microseconds
+        digitalWrite(IO_RST_N, LOW);
+        delayMicroseconds(110);
+        digitalWrite(IO_RST_N, HIGH);
+    }
+
     // send Charge Pump ON command
     transmit(0, POWER_ON);
 
@@ -144,7 +157,7 @@ void XiaomiMiaoMiaoCeBT::send_sequence(uint8_t *dataV, uint8_t *dataKK,
     transmit(1, 0x46);
     transmit(1, 0x46);
     transmit(0, POWER_OFF_SEQUENCE_SETTING);
-    if (is_init == 1)
+    if (is_init)
     {
         transmit(1, 0x00);
     }
@@ -154,7 +167,7 @@ void XiaomiMiaoMiaoCeBT::send_sequence(uint8_t *dataV, uint8_t *dataKK,
     }
     
     transmit(0, PLL_CONTROL); // Frame Rate Control
-    if (is_init == 1)
+    if (is_init)
     {
         transmit(1, 0x02);
     }
@@ -163,23 +176,23 @@ void XiaomiMiaoMiaoCeBT::send_sequence(uint8_t *dataV, uint8_t *dataKK,
         transmit(1, 0x03);
     }
 
-// NOTE: Original firmware makes partial refresh (when not initialising the screen).
-// However "playing" with the partial refresh enabled, white segments start turning gray after a while
-// (until display is re-initialised).
-//    if ( (is_init == 0) )
-//    {
-//        transmit(0, PARTIAL_DISPLAY_REFRESH);
-//        transmit(1, 0x00);
-//        transmit(1, 0x87);
-//        transmit(1, 0x01);
-//    }
+    // NOTE: Original firmware makes partial refresh on update, but not when initialising the screen.
+    // Switching the background segment on/off requires full refresh, hence do not send partial refresh
+    // command when switching between inverted / non-inverted screen mode.
+    if ( !is_init && !transition )
+    {
+        transmit(0, PARTIAL_DISPLAY_REFRESH);
+        transmit(1, 0x00);
+        transmit(1, 0x87);
+        transmit(1, 0x01);
+    }
 
     // send the e-paper voltage settings (waves)
     transmit(0, LUT_FOR_VCOM);
     for (int i = 0; i < 15; i++)
         transmit(1, dataV[i]);
 
-    if(is_init == 1)
+    if(is_init)
     {
         transmit(0, LUT_CMD_0x23);
         for (int i = 0; i < 15; i++)
@@ -213,23 +226,31 @@ void XiaomiMiaoMiaoCeBT::send_sequence(uint8_t *dataV, uint8_t *dataKK,
     for (int i = 0; i < 18; i++)
         transmit(1, data[i]);
 
-    if (is_init == 1)
+    while (digitalRead(IO_BUSY_N) == 0)
+        delay(1);
+
+    // Original firmware sends DATA_START_TRANSMISSION_2 command only
+    // when performing full refresh
+    if (is_init && !transition)
     {
         transmit(0, DATA_START_TRANSMISSION_2);
         for(int i = 0; i < 18; i++)
             transmit(1, data[i]);
+
+        while (digitalRead(IO_BUSY_N) == 0)
+            delay(1);
     }
-    else
+    
+    if (transition)
     {
-        // NOTE: Original firmware doesn't perform this,
-        // but from experiments inverting the segments in
-        // DATA_START_TRANSMISSION_2 helps alleviate the problem
-        // with white segments turning gray. The only downside is
-        // a slight "blink" of the white background when refreshing
-        // the display
-        transmit(0, DATA_START_TRANSMISSION_2);
-        for(int i = 0; i < 18; i++)
-            transmit(1, ~data[i]);
+        // NOTE: Original firmware doesn't perform this, but I found through experiments
+        // that this is the way to clear the black background segment, without a full re-initialisation
+        // (also partial refresh should not be sent in this case).
+        {
+            transmit(0, DATA_START_TRANSMISSION_2);
+            for(int i = 0; i < 18; i++)
+                transmit(1, ~data[i]);
+        }
     }
 
     transmit(0, DISPLAY_REFRESH);
@@ -303,10 +324,6 @@ void XiaomiMiaoMiaoCeBT::transmit(uint8_t cd, uint8_t data_to_send)
 
 void XiaomiMiaoMiaoCeBT::write_display()
 {
-    digitalWrite(IO_RST_N, LOW);
-    delayMicroseconds(100);
-    digitalWrite(IO_RST_N, HIGH);
-
     // Send update waveforms
     send_sequence(T_LUTV_init, T_LUT_KK_update, T_LUT_KW_update, display_data, 0);
 }
@@ -444,7 +461,14 @@ void XiaomiMiaoMiaoCeBT::set_segment(uint8_t segment_byte, uint8_t segment_bit,
 
 void XiaomiMiaoMiaoCeBT::start_new_screen(uint8_t _inverted)
 {
-    if (_inverted == 1)
+    // Set transition flag, indicating if the background
+    // segment needs to be set or cleared
+    if (_inverted != inverted)
+        transition = 1;
+    else
+        transition = 0;
+
+     if (_inverted == 1)
         inverted = 1;
     else
         inverted = 0;
@@ -454,6 +478,7 @@ void XiaomiMiaoMiaoCeBT::start_new_screen(uint8_t _inverted)
     {
         for (int i = 0; i < 18; i++)
             display_data[i] = 0xFF;
+
         // set the bit to switch the background to black,
         // use value=0 because of inversion
         set_segment(17, 7, 0);

@@ -142,6 +142,7 @@ private:
 
     // boolean to indicate if the screen is inverted or not
     uint8_t inverted = 0;
+    uint8_t transition = 0;
     // The array in which the segments to be displayed are placed
     uint8_t display_data[18];
 };
