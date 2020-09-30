@@ -141,12 +141,8 @@ void update_display()
   tm *normal_time;
   normal_time = localtime(&rtc_data.unix_time);
 
-  // start building a new screen (alternating between
-  // inverted / non-inverted every minute)
-  if (normal_time->tm_min % 2 == 0)
-    my_display.start_new_screen(1);
-  else
-    my_display.start_new_screen(0);
+  // start building a new screen (0 - normal, 1 - inverted)
+  my_display.start_new_screen(0);
   
 
   // the 10th of the seconds on the top row
