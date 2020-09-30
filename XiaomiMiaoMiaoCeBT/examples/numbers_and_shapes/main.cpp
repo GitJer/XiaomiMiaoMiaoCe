@@ -101,6 +101,11 @@ void loop()
     if ((number % 16) == 0)
     {
         is_screen_inverted = !is_screen_inverted;
+        // NOTE: If screen is not inverted from time to time,
+        // white segments become visible
+        // To avoid this, re-initialise the display with redraw
+        // after 15-20 partial update cycles:
+        //my_display.init(1);
     }
 
     // wait some time (5 seconds)
