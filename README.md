@@ -25,42 +25,42 @@ An Arduino-compatible C++ library with a few examples to control the display is 
 
 - **Display** at **P1**: Segmented e-paper display controller connected to PCB with 10-pin FPC.
 
-  - Display controller IC is unknown, but unlike that used in MHO-C201, it is *not* HT1607. Some of the commands captured between the MCU and Display match HT16E07 datasheet, some match other display controllers 
+- Display controller IC is unknown, but unlike that used in MHO-C201, it is *not* HT1607. Some of the commands captured between the MCU and Display match HT16E07 datasheet, some match other display controllers 
 
-  - Pins (from "top")
+- Pins (from "top")
 
-  1. VDL
-       - > Driver low supply voltage – bypass to GND with 1μF capacitor
-       - Connected to capacitor at **C3**.
-       - Measured voltage: 6.5V.
+1. VDL
+  - Driver low supply voltage – bypass to GND with 1μF capacitor
+    - Connected to capacitor at **C3**.
+    - Measured voltage: 6.5V.
        
-  2. VDH
-       - > Driver high supply voltage – bypass to GND with 1μF capacitor
-       - Connected to capacitor at **C2**.
-       - Measured voltage 12.4V
+2. VDH
+  - Driver high supply voltage – bypass to GND with 1μF capacitor
+    - Connected to capacitor at **C2**.
+    - Measured voltage 12.4V
        
-  3. GND
+3. GND
 
-  4. VDD
+4. VDD
+  - Between 2.4 to 3.6V
 
-     - > Between 2.4 to 3.6V
+5. SDA (data) - connected to pin 13 (SPI_DO) of MCU 
 
-  5. SDA (data) - connected to pin 13 (SPI_DO) of MCU 
+6. SCL (clock) - connected to pin 1 (SPI_CK) of MCU
 
-  6. SCL (clock) - connected to pin 1 (SPI_CK) of MCU
-
-  7. CSB (latch) - connected to pin 24 (SPI_CS) of MCU 
-     - > Low during data clock pulses, pulses high after 9 clocks pulses
+7. CSB (latch) - connected to pin 24 (SPI_CS) of MCU 
+  - Low during data clock pulses, pulses high after 9 clocks pulses
   
-  8. UNKNOWN (probably SHD_N, connected to pin 17 (PC4) of MCU
-     - > Maybe this is charge pump enable pin – low shutdown
+8. UNKNOWN (probably SHD_N, connected to pin 17 (PC4) of MCU
+  - Maybe this is charge pump enable pin – low shutdown
   
-  9. RST_N - connected to pin 3 (SWS/PA6) of MCU
+9. RST_N - connected to pin 3 (SWS/PA6) of MCU
 
-  10. BUSY_N - connected to pin 2 (PA5) of MCU 
-       - > Busy flag output pin
-        > BUSY_N="0" – driver is busy, driver is refreshing the display
-        > BUSY_N="1" – driver is idle, host can send command/data to driver
+10. BUSY_N - connected to pin 2 (PA5) of MCU 
+  - Busy flag output pin
+    - BUSY_N="0" – driver is busy, driver is refreshing the display
+    - BUSY_N="1" – driver is idle, host can send command/data to driver
+
 
 - **MCU** at **U2**: TLSR8251 [datasheet](http://wiki.telink-semi.cn/doc/ds/DS_TLSR8251-E_Datasheet%20for%20Telink%20BLE+IEEE802.15.4%20Multi-Standard%20Wireless%20SoC%20TLSR8251.pdf)
 
