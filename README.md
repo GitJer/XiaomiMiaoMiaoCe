@@ -1,52 +1,154 @@
-Library for controlling the e-ink display of the Xiaomi Miao Miao Ce temperature and humidity sensor.
+# Reverse Engineering a MHO-C401
 
-![](media/XiaomiMiaoMiaoCe.jpg)
+First, I want to thank the owners of the following two GitHub repositories, whose hard work I used as foundation and inspiration when I was reverse engineering the MHO-C401 sensor:
 
-After disassembly, the display itself looks like this (connected to a breakout board):
+https://github.com/jonathonlui/MHO-C201
+https://github.com/GitJer/XiaomiMiaoMiaoCe
 
-![](media/display_with_breakout_board.jpg)
+The current repository is a fork of https://github.com/GitJer/XiaomiMiaoMiaoCe due to my desire to use a C++ based approach, but the present README is heavily based on the reverse engineering efforts of https://github.com/jonathonlui/MHO-C201.
 
-It is interesting to note that on the back-side of the display the segments are visible. In the segments a connection is visible, indicating that this is a segmented e-ink display. 
+![example-count](media/MHO-C401-epd-screen-demo.gif)
 
-![](media/segments.jpg)
+The **Mijia MHO-C401** (also sold as  **Xiaomi MiaoMiaoCe MMC-C401**) is a Bluetooth-enabled thermometer and hygrometer display with a segmented e-ink screen.
 
-There is a sticker on the display that says it is a WEIFENG WUXI VISION PEAK TECHNOLOGY (WF0246S1HCF410320, U18S1219897326-G098) but I couldn't find any additional information.
+A multimeter in continuity mode was used to trace the connections between the stock MCU (TLSR8251) and the display controller (which is *unknown* - MHO-C201 seems to be using HT16E07, but its connections and commands differ from those used in MHO-C401).
 
-The circuit board controlling the display has a [HT66F0182](https://www.holtek.com/documents/10179/116711/HT66F0182v110.pdf) MCU.
+To determine the purpose of each connection, a logic analyzer was used to capture the signals (see [`./captures`](./captures)) between the MCU and display controller. The captures were compared to a number of e-ink display controllers' datasheets, but a single and exact match was not found.
 
-The display itself has a small driver in it (the small black rectangle near the flat-flex connection). After comparing the size of that chip and the commands that are send to it, I conclude that it is most probably the 120 Segments EPD Driver IC [HT16E07](https://www.holtek.com/documents/10179/116711/HT16E07v100.pdf).
+The display was disconnected from the MCU board and it was instead connected to a breakout board in order to be able to control it easily with a Wemos D1 mini EPS8266-based board.
 
-One of the secret sauces of getting e-ink displays to work is the set of waveforms that make the colored dots go to the up or bottom side of the display. I have used a logic analyzer to find these.
+## A C++ Library
 
-Additionally I used the commands defined in the [software Holtec provides](https://www.holtek.com/documents/10179/116745/an0461.zip) for a similar device to make my own driver.
+An Arduino-compatible C++ library with a few examples to control the display is in: [./XiaomiMiaoMiaoCeBT](./XiaomiMiaoMiaoCeBT).
 
-Since I wanted to make a clock with NTP time updates I used an ESP8266 (Wemos D1 mini) to control the display. The connections from the flat-flex-to-pins breakout board to the ESP8266 are as follows.
+## Components
 
-The flat flex contains 10 connections with a 0.5mm spacing. Looking from the right side towards the screen the breakout board has 10 pins with numbering:
+- **Display** at **P1**: Segmented e-paper display controller connected to PCB with 10-pin FPC.
 
-```
-1  3  5  7  9
+  - Display controller IC is unknown, but unlike that used in MHO-C201, it is *not* HT1607. Some of the commands captured between the MCU and Display match HT16E07 datasheet, some match other display controllers 
 
-2  4  6  8  10
-```
+  - Pins (from "top")
 
-The follwing connections (defined in XiaomiMiaoMiaoCe.h) to the ESP8266 are made:
+  1. VDL
+       - > Driver low supply voltage – bypass to GND with 1μF capacitor
+       - Connected to capacitor at **C3**.
+       - Measured voltage: 6.5V.
+       
+  2. VDH
+       - > Driver high supply voltage – bypass to GND with 1μF capacitor
+       - Connected to capacitor at **C2**.
+       - Measured voltage 12.4V
+       
+  3. GND
 
-| Breakout | ESP8266| Function  |
-| -------- |:-------|:-----     |
-| 1        | D2     | BUSY_N    |
-| 2        | D7     | SPI ENABLE|
-| 3        | D1     | SPI CLK   |
-| 4        | D6     | SPI MOSI  |
-| 5        | -      | not connected |
-| 6        | D5     | RST_N     |
-| 7        | 3V3    | VCC 3V3   |
-| 8        | GND    | GND       |
-| 9        | -      | not connected (VDH)|
-| 10       | -      | not connected (VDL)|
+  4. VDD
 
-Note that according to the data sheet pins 9 and 10 are VDH (12V) and VDL (3V3) that are involved in the waveforms that change the e-ink segments, need to go to ground via 1 uF capacitors. I have operated this display with and without these capacitors and it doesn't seem to make a difference.
+     - > Between 2.4 to 3.6V
 
-The BUSY_N signal is generated by the display driver to indicate it is ready to receive new data. So it is an input to the ESP8266. The other signals are outputs from the ESP8266 to the display driver.
+  5. SDA (data) - connected to pin 13 (SPI_DO) of MCU 
 
-When playing with the display I noticed that if I changed the display frequently, in the examples I change the display every couple of seconds, the segments become gray. The white becomes light gray and the black becomes dark gray. Also when changing a segment to black it slowly becomes lighter gray. After leaving the display off for some time (a night) this effect disappears. In the clock example the display is changed once a minute and no graying problem is visible.
+  6. SCL (clock) - connected to pin 1 (SPI_CK) of MCU
+
+  7. CSB (latch) - connected to pin 24 (SPI_CS) of MCU 
+     - > Low during data clock pulses, pulses high after 9 clocks pulses
+  
+  8. UNKNOWN (probably SHD_N, connected to pin 17 (PC4) of MCU
+     - > Maybe this is charge pump enable pin – low shutdown
+  
+  9. RST_N - connected to pin 3 (SWS/PA6) of MCU
+
+  10. BUSY_N - connected to pin 2 (PA5) of MCU 
+       - > Busy flag output pin
+        > BUSY_N="0" – driver is busy, driver is refreshing the display
+        > BUSY_N="1" – driver is idle, host can send command/data to driver
+
+- **MCU** at **U2**: TLSR8251 [datasheet](http://wiki.telink-semi.cn/doc/ds/DS_TLSR8251-E_Datasheet%20for%20Telink%20BLE+IEEE802.15.4%20Multi-Standard%20Wireless%20SoC%20TLSR8251.pdf)
+
+## Startup and Update
+
+### On startup the stock MCU:
+
+The MCU updates the display 3 times on startup:
+
+1. MCU powers on
+2. After 100 ms, sets Display SHD_N high
+3. Update #1: Full black clear. This update turns on then off all black segments using special LUT values (see below for **Update Display Sequence**)
+   - BUSY_N is low for about 3400 ms between after sending DRF
+4. Update #2: Full white clear. This update turns on then off all white segments using special LUT values (see below for **Update Display Sequence**)
+   - BUSY_N is low for about 1950 ms between after sending DRF
+5. Update #3: Set all black segments on (except the background segment).
+   - BUSY_N is low for about 1950 ms between after sending DRF
+6. Wait 100ms
+7. During this 100ms the MCU reads temp from Sensor
+8. Update #4: Set some black/white segments on/off (to show temp / humidity)
+   - BUSY_N is low for about 1950 after DRF
+8. Sends final POWER_OFF command
+
+### Update Display Sequence
+
+After startup the MCU will periodically read the Sensor and sets on/off state of the segments.
+
+1. Send low pulse on RST_N for 110 microseconds
+
+3. Send: Power On (POWER_ON - 0x04)
+
+4. Wait for BUSY_N high
+
+5. Send: Panel Setting (PANEL_SETTING - 0x00)
+
+6. Send: Power Setting (POWER_SETTING - 0x01)
+
+7. Send: Power Off Sequence Setting (POWER_OFF_SEQUENCE_SETTING - 0x03)
+
+8. Send: Frame Rate Control (FRAME_RATE_CONTROL - 0x30)
+
+9. Send (ONLY when *not* initialising): PARTIAL_DISPLAY_REFRESH - 0x15
+
+10.1. Send: LUTV (0x20), LUT_KK (0x23), LUT_KW (0x26)
+
+  - The LUT define the timing and voltages for turning on/off the segments
+  - There are 3 sets of LUT values
+     1. LUT values to fully clear the display by turning on and then off all the segments
+     2. LUT values to turn off segments
+     3. LUT values to turn on segments
+
+10.2. Send LUT (0x24) and LUT (0x25)
+
+  - Send two additional LUT tables when performing update (i.e. *not* during the initialisation phase)
+
+11. Send: Data Start Transmission 1 (DATA_START_TRANSMISSION_1 - 0x18)
+
+  - Logic analyzer captures show DATA_START_TRANSMISSION_1 command is 18 bytes. 
+
+11. Send: Data Start Transmission 2 (DATA_START_TRANSMISSION_2 - 0x1C)
+  
+  - Logic analyzer captures show DATA_START_TRANSMISSION_2 command is 18 bytes.
+
+12. Send: Display Refresh (DISPLAY_REFRESH - 0x12)
+
+13. BUSY_N goes low which means display is refreshing
+
+14. Wait for BUSY_N high
+
+15. Send: Power Off (POWER_OFF - 0x02)
+
+## Segments
+
+![segments](images/segments.jpg)
+
+#### Segment 94
+
+Segment 94 turns on the parts of the display that are always on during normal usage:
+
+- Degree symbol and common parts of C and F
+- Decimal point
+- Side of faces
+- Percent sign
+
+![segment-94](images/segment-94.jpg)
+
+#### Segment 96
+
+Segment 96 is the "background"
+
+![segment-96](images/segment-96.jpg)
