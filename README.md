@@ -2,8 +2,8 @@
 
 First, I want to thank the owners of the following two GitHub repositories, whose hard work I used as foundation and inspiration when I was reverse engineering the MHO-C401 sensor:
 
-https://github.com/jonathonlui/MHO-C201
-https://github.com/GitJer/XiaomiMiaoMiaoCe
+* https://github.com/jonathonlui/MHO-C201
+* https://github.com/GitJer/XiaomiMiaoMiaoCe
 
 The current repository is a fork of https://github.com/GitJer/XiaomiMiaoMiaoCe due to my desire to use a C++ based approach, but the present README is heavily based on the reverse engineering efforts of https://github.com/jonathonlui/MHO-C201.
 
@@ -13,13 +13,18 @@ The **Mijia MHO-C401** (also sold as  **Xiaomi MiaoMiaoCe MMC-C401**) is a Bluet
 
 A multimeter in continuity mode was used to trace the connections between the stock MCU (TLSR8251) and the display controller (which is *unknown* - MHO-C201 seems to be using HT16E07, but its connections and commands differ from those used in MHO-C401).
 
-To determine the purpose of each connection, a logic analyzer was used to capture the signals (see [`./captures`](./captures)) between the MCU and display controller. The captures were compared to a number of e-ink display controllers' datasheets, but a single and exact match was not found.
+To determine the purpose of each connection, a logic analyser was used to capture the signals (see [`./captures`](./captures)) between the MCU and display controller. The captures were compared to a number of e-ink display controllers' datasheets, but a single and exact match was not found.
 
-The display was disconnected from the MCU board and it was instead connected to a breakout board in order to be able to control it easily with a Wemos D1 mini EPS8266-based board.
+The display was disconnected from the MCU board and it was instead connected to a breakout board in order to be able to control it easily with a Wemos D1 mini EPS8266-based board:
+
+![breakout-board](media/breakout_board.jpg)
 
 ## A C++ Library
 
 An Arduino-compatible C++ library with a few examples to control the display is in: [./XiaomiMiaoMiaoCeBT](./XiaomiMiaoMiaoCeBT).
+
+## PCB
+![PCB](media/PCB.jpg)
 
 ## Components
 
@@ -35,7 +40,7 @@ An Arduino-compatible C++ library with a few examples to control the display is 
        
 2. VDH - Driver high supply voltage – bypass to GND with 1μF capacitor
     - Connected to capacitor at **C2**.
-    - Measured voltage 12.4V
+    - Measured voltage 12.6V
        
 3. GND
 
@@ -59,7 +64,7 @@ An Arduino-compatible C++ library with a few examples to control the display is 
       - BUSY_N="1" – driver is idle, host can send command/data to driver
 
 
-### **MCU** at **U2**: TLSR8251 [datasheet](http://wiki.telink-semi.cn/doc/ds/DS_TLSR8251-E_Datasheet%20for%20Telink%20BLE+IEEE802.15.4%20Multi-Standard%20Wireless%20SoC%20TLSR8251.pdf)
+### **MCU** at **U3**: TLSR8251 [datasheet](http://wiki.telink-semi.cn/doc/ds/DS_TLSR8251-E_Datasheet%20for%20Telink%20BLE+IEEE802.15.4%20Multi-Standard%20Wireless%20SoC%20TLSR8251.pdf)
 
 ## Startup and Update
 
@@ -131,21 +136,31 @@ After startup the MCU will periodically read the Sensor and sets on/off state of
 
 ## Segments
 
-![segments](images/segments.jpg)
+Segments are mapped accross the bits (0-7) of 18 bytes (0-17), sent with DATA_START_TRANSMISSION command. The exact mapping was determined by cycling through all the bits and bytes, using the sample here: [find_segment_positions](./XiaomiMiaoMiaoCeBT/examples/find_segment_positions).
 
-#### Segment 94
+Following image shows how the segments are mapped: first number is the byte, second number is the bit within that byte:
 
-Segment 94 turns on the parts of the display that are always on during normal usage:
+![All segments](media/all_segments.png)
+
+This convention is used in the code when defining logic groups of segments, like: `top_left`, `bottom_right`, `face` etc.
+
+#### Segment (16,5)
+
+Segment (16,5) turns on the parts of the display that are always on during normal usage:
 
 - Degree symbol and common parts of C and F
 - Decimal point
 - Side of faces
 - Percent sign
 
-![segment-94](images/segment-94.jpg)
+#### Segment (17,7)
 
-#### Segment 96
+Segment (17,7) is the "background"
 
-Segment 96 is the "background"
+#### Forming symbols
 
-![segment-96](images/segment-96.jpg)
+In order to facilitate the display of Hexadecimal numbers, another two-dimensional array is used - `digits[16][11]`. This array defines how each hexadecimal digit maps to the following group of segments (1 to 11):
+
+![Digit segments](media/digit_segments.png)
+
+You can check the following example, demonstrating how to "draw" numbers: [numbers_and_shapes](./XiaomiMiaoMiaoCeBT/examples/numbers_and_shapes).
