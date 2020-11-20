@@ -343,20 +343,20 @@ void XiaomiMiaoMiaoCeBT::write_display(uint8_t *data)
 void XiaomiMiaoMiaoCeBT::set_digit(uint8_t digit, uint8_t where)
 {
     // check if the input is valid
-    if ((digit >= 0) and (digit < 16) and (where >= TOP_LEFT) and (where <= BOTTOM_RIGHT))
+    if ((digit >= 0) && (digit < 16) && (where >= TOP_LEFT) && (where <= BOTTOM_RIGHT))
     {
         // set which segments are to be used
         uint8_t *segments;
-        if (where == TOP_LEFT)
-            segments = top_left;
-        else if (where == TOP_MIDDLE)
-            segments = top_middle;
-        else if (where == TOP_RIGHT)
-            segments = top_right;
-        else if (where == BOTTOM_LEFT)
-            segments = bottom_left;
-        else if (where == BOTTOM_RIGHT)
-            segments = bottom_right;
+        switch(where)
+        {
+            case TOP_LEFT: segments = top_left; break;
+            case TOP_MIDDLE: segments = top_middle; break;
+            case TOP_RIGHT: segments = top_right; break;
+            case BOTTOM_LEFT: segments = bottom_left; break;
+            case BOTTOM_RIGHT: segments = bottom_right; break;
+            default:
+                break;
+        }
 
         // set the segments, there are up to 11 segments in a digit
         int segment_byte;
@@ -386,63 +386,55 @@ void XiaomiMiaoMiaoCeBT::set_shape(uint8_t where)
     uint8_t *segments = NULL;
 
     // set the number of segments and which segments has to be displayed
-    if (where == TOP_LEFT_1)
+    switch (where)
     {
-        num_of_segments = sizeof(top_left_1) / 2;
-        segments = top_left_1;
+        case TOP_LEFT_1:
+            num_of_segments = sizeof(top_left_1) / 2;
+            segments = top_left_1;
+            break;
+        case BATTERY_LOW:
+            num_of_segments = sizeof(battery_low) / 2;
+            segments = battery_low;
+            break;
+        case DASHES:
+            num_of_segments = sizeof(dashes) / 2;
+            segments = dashes;
+            break;
+        case FACE:
+            num_of_segments = sizeof(face) / 2;
+            segments = face;
+            break;
+        case FACE_SMILE:
+            num_of_segments = sizeof(face_smile) / 2;
+            segments = face_smile;
+            break;
+        case FACE_FROWN:
+            num_of_segments = sizeof(face_frown) / 2;
+            segments = face_frown;
+            break;
+        case FACE_NEUTRAL:
+            num_of_segments = sizeof(face_neutral) / 2;
+            segments = face_neutral;
+            break;
+        case SUN:
+            num_of_segments = sizeof(sun) / 2;
+            segments = sun;
+            break;
+        case FIXED:
+            num_of_segments = sizeof(fixed) / 2;
+            segments = fixed;
+            break;
+        case FIXED_DEG_C:
+            num_of_segments = sizeof(fixed_deg_C) / 2;
+            segments = fixed_deg_C;
+            break;
+        case FIXED_DEG_F:
+            num_of_segments = sizeof(fixed_deg_F) / 2;
+            segments = fixed_deg_F;
+            break;
+        default:
+            return;
     }
-    else if (where == BATTERY_LOW)
-    {
-        num_of_segments = sizeof(battery_low) / 2;
-        segments = battery_low;
-    }
-    else if (where == DASHES)
-    {
-        num_of_segments = sizeof(dashes) / 2;
-        segments = dashes;
-    }
-    else if (where == FACE)
-    {
-        num_of_segments = sizeof(face) / 2;
-        segments = face;
-    }
-    else if (where == FACE_SMILE)
-    {
-        num_of_segments = sizeof(face_smile) / 2;
-        segments = face_smile;
-    }
-    else if (where == FACE_FROWN)
-    {
-        num_of_segments = sizeof(face_frown) / 2;
-        segments = face_frown;
-    }
-    else if (where == FACE_NEUTRAL)
-    {
-        num_of_segments = sizeof(face_neutral) / 2;
-        segments = face_neutral;
-    }
-    else if (where == SUN)
-    {
-        num_of_segments = sizeof(sun) / 2;
-        segments = sun;
-    }
-    else if (where == FIXED)
-    {
-        num_of_segments = sizeof(fixed) / 2;
-        segments = fixed;
-    }
-	else if (where == FIXED_DEG_C)
-	{
-		num_of_segments = sizeof(fixed_deg_C) / 2;
-        segments = fixed_deg_C;
-	}
-	else if (where == FIXED_DEG_F)
-	{
-		num_of_segments = sizeof(fixed_deg_F) / 2;
-        segments = fixed_deg_F;
-	}
-    else
-        return;
 
     // set the segments
     for (uint8_t segment = 0; segment < num_of_segments; segment++)
@@ -458,8 +450,8 @@ void XiaomiMiaoMiaoCeBT::set_segment(uint8_t segment_byte, uint8_t segment_bit,
 {
     // depending on whether the display is inverted and the desired value
     // the bit needs to be set or cleared
-    if (((inverted == 0) and (value == 1)) or
-        ((inverted == 1) and (value == 0)))
+    if (((inverted == 0) && (value == 1)) ||
+        ((inverted == 1) && (value == 0)))
         // set the bit
         display_data[segment_byte] |= (1 << segment_bit);
     else

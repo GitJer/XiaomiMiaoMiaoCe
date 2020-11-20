@@ -64,39 +64,17 @@ void loop()
     int remainder = number % 11;
     switch (remainder)
     {
-		case 0:
-			my_display.set_shape(TOP_LEFT_1);
-			break;
-		case 1:
-			my_display.set_shape(BATTERY_LOW);
-			break;
-		case 2:
-			my_display.set_shape(DASHES);
-			break;
-		case 3:
-			my_display.set_shape(FACE);
-			break;
-		case 4:
-			my_display.set_shape(FACE_SMILE);
-			break;
-		case 5:
-			my_display.set_shape(FACE_FROWN);
-			break;
-		case 6:
-			my_display.set_shape(FACE_NEUTRAL);
-			break;
-		case 7:
-			my_display.set_shape(SUN);
-			break;
-		case 8:
-			my_display.set_shape(FIXED);
-			break;
-		case 9:
-			my_display.set_shape(FIXED_DEG_C);
-			break;
-		case 10:
-			my_display.set_shape(FIXED_DEG_F);
-			break;		
+		case 0: my_display.set_shape(TOP_LEFT_1); break;
+		case 1: my_display.set_shape(BATTERY_LOW); break;
+		case 2: my_display.set_shape(DASHES); break;
+		case 3: my_display.set_shape(FACE); break;
+		case 4: my_display.set_shape(FACE_SMILE); break;
+		case 5: my_display.set_shape(FACE_FROWN); break;
+		case 6: my_display.set_shape(FACE_NEUTRAL); break;
+		case 7: my_display.set_shape(SUN); break;
+		case 8: my_display.set_shape(FIXED); break;
+		case 9: my_display.set_shape(FIXED_DEG_C); break;
+		case 10: my_display.set_shape(FIXED_DEG_F); break;		
     }
 
     my_display.write_display();
