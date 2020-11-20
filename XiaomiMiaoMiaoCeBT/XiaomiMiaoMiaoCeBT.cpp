@@ -31,6 +31,8 @@ uint8_t face_frown[6] = {5, 6, 4, 4, 4, 1};
 uint8_t face_neutral[6] = {5, 6, 4, 1, 4, 7};
 uint8_t sun[2] = {5, 0};
 uint8_t fixed[2] = {16, 5};
+uint8_t fixed_deg_C[2] = {14, 2};
+uint8_t fixed_deg_F[2] = {16, 6};
 
 // These values closely match times captured with logic analyser
 uint8_t delay_SPI_clock_pulse = 8;
@@ -341,7 +343,7 @@ void XiaomiMiaoMiaoCeBT::write_display(uint8_t *data)
 void XiaomiMiaoMiaoCeBT::set_digit(uint8_t digit, uint8_t where)
 {
     // check if the input is valid
-    if ((digit >= 0) and (digit < 16) and (where >= 2) and (where <= 6))
+    if ((digit >= 0) and (digit < 16) and (where >= TOP_LEFT) and (where <= BOTTOM_RIGHT))
     {
         // set which segments are to be used
         uint8_t *segments;
@@ -355,10 +357,6 @@ void XiaomiMiaoMiaoCeBT::set_digit(uint8_t digit, uint8_t where)
             segments = bottom_left;
         else if (where == BOTTOM_RIGHT)
             segments = bottom_right;
-        else if (where == TOP_MIDDLE)
-            segments = top_middle;
-        else if (where == TOP_MIDDLE)
-            segments = top_middle;
 
         // set the segments, there are up to 11 segments in a digit
         int segment_byte;
@@ -433,6 +431,16 @@ void XiaomiMiaoMiaoCeBT::set_shape(uint8_t where)
         num_of_segments = sizeof(fixed) / 2;
         segments = fixed;
     }
+	else if (where == FIXED_DEG_C)
+	{
+		num_of_segments = sizeof(fixed_deg_C) / 2;
+        segments = fixed_deg_C;
+	}
+	else if (where == FIXED_DEG_F)
+	{
+		num_of_segments = sizeof(fixed_deg_F) / 2;
+        segments = fixed_deg_F;
+	}
     else
         return;
 

@@ -54,6 +54,8 @@
 #define FACE_NEUTRAL 13
 #define SUN 14
 #define FIXED 15
+#define FIXED_DEG_C 16
+#define FIXED_DEG_F 17
 
 //----------------------------------
 // define the class for driving the Xiaomi MiaoMiaoCe e-ink display
