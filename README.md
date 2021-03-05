@@ -14,7 +14,7 @@ There is a sticker on the display that says it is a WEIFENG WUXI VISION PEAK TEC
 
 The circuit board controlling the display has a [HT66F0182](https://www.holtek.com/documents/10179/116711/HT66F0182v110.pdf) MCU.
 
-The display itself has a small driver in it (the small black rectangle near the flat-flex connection). After comparing the size of that chip and the commands that are send to it, I conclude that it is most probably the 120 Segments EPD Driver IC [HT16E07](https://www.holtek.com/documents/10179/116711/HT16E07v100.pdf).
+The display itself has a small driver in it (the small black rectangle near the flat-flex connection). After comparing the size of that chip and the commands that are send to it, with on-line data, I conclude that it is most probably the 120 Segments EPD Driver IC [HT16E07](https://www.holtek.com/documents/10179/116711/HT16E07v100.pdf).
 
 One of the secret sauces of getting e-ink displays to work is the set of waveforms that make the colored dots go to the up or bottom side of the display. I have used a logic analyzer to find these.
 
